@@ -1,7 +1,10 @@
-;produtos
+;------ CONSTANTES ------;
+DisplayInicio equ 100h
+DisplayFim equ 16fh
 
-;menus
+;------ PRODUTOS ------;
 
+;------ MENUS ------;
 place 2000h 
 MenuInicio:
 string "----------------"
@@ -39,8 +42,23 @@ string "                "
 string "1) Confirmar    "
 string "2) Voltar       "
 
-;constantes
+;------ PROGRAMA ------;
+;...
 
-;programa
-
-;rotinas
+;------ ROTINAS/FUNCOES ------;
+mostraDisplay: ; r0 indica o endereço do primeiro caracter do menu
+push r1 
+push r2
+push r3
+mov r1, DisplayInicio
+mov r2, DisplayFim
+ciclo:
+mov r3, [r0]
+mov [r1], r3
+add r0, 2
+add r1, 2
+cmp r1, r2
+jne ciclo
+pop r3
+pop r2
+pop r1
