@@ -44,6 +44,9 @@ string "2) Voltar       "
 
 ;------ PROGRAMA ------;
 ;...
+place 0000h
+mov r0, MenuInicio;
+call mostraDisplay;
 
 ;------ ROTINAS/FUNCOES ------;
 mostraDisplay: ; r0 indica o endereço do primeiro caracter do menu
@@ -58,7 +61,8 @@ mov [r1], r3
 add r0, 2
 add r1, 2
 cmp r1, r2
-jne ciclo
+jlt ciclo
 pop r3
 pop r2
 pop r1
+ret
