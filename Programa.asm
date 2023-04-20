@@ -5,8 +5,12 @@ Opcao equ 200h
 
 ;------ PRODUTOS ------;
 
+;------ PASSWORD ------;
+place 1ffch
+Password:
+string "p4S$"
+
 ;------ MENUS ------;
-place 2000h 
 MenuInicio:
 string "----------------"
 string "MAQUINA MADEIRA "
@@ -26,7 +30,7 @@ string "7) Cancelar     "
 string "----------------"
 
 MenuErro:
-string "---------------!"
+string "!--------------!"
 string "!     OPCAO    !"
 string "!   INVALIDA   !"
 string "!--------------!"
@@ -44,13 +48,12 @@ string "1) Confirmar    "
 string "2) Voltar       "
 
 ;------ PROGRAMA ------;
-;...
 place 0000h
 mov r0, MenuInicio;
-call mostraDisplay;
+call MostraDisplay;
 
 ;------ ROTINAS/FUNCOES ------;
-mostraDisplay:; escreve os menus no periférico de saída
+MostraDisplay:; escreve os menus no periférico de saída
 ; input : r0 = endereço do menu a ser mostrado
 push r1; r1 = primeiro endereço do periférico de saida
 push r2; r2 = último endereço do periférico de saida
@@ -69,9 +72,25 @@ pop r2
 pop r1
 ret
 
-limpaPerifericos:
-push r0
-mov r0, Opcao; r0 = endereço do periferico de entrada
+LimpaPerifericos:; 
+push r0; r0 = endereço do periferico de entrada
+mov r0, Opcao
 mov [r0], 0; PER_EN = 0
+pop r0
+ret
+
+RotinaErro:; chamada em casos de opção inválida por exemplo
+push r0; r0 = endereço do menu de erros
+push r1; r1 = endereço do periférico de entrada
+push r2; r2 = valor da opção
+mov r0, MenuErro
+call MostraDisplay; mostra o menu de erros no display
+leitura:
+mov r1, Opcao
+mov r2, [r1]
+cmp r2, 0; opcao = 0?
+jeq leitura
+pop r2
+pop r1
 pop r0
 ret
