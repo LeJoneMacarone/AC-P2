@@ -5,7 +5,8 @@ Opcao equ 200h
 TamanhoNomeProd equ 11
 CaracterVazio equ 20h
 ItemsPorPag equ 5
-TotalPagStock 
+TotalRegistos equ 15
+TotalPagStock equ 250h ; endereço onde vai ficar guardado o total de paginas do stock
 
 ;------ PASSWORD ------;
 place 1ff0h
@@ -18,6 +19,7 @@ string "p4S$"
 ;   quantidade - 1 byte 
 ;   preço (em cent) - 1 byte
 ;   (total - 14 bytes)
+
 place 1000h
 Bebidas:
 string 0
@@ -130,9 +132,7 @@ string "2) Voltar       "
 
 ;------ PROGRAMA ------;
 place 0000h
-mov r1, DisplayInicio;
-mov r0, Produtos;
-call EscreveLinhaStock;
+call CalcTotalPaginas
 
 ;------ ROTINAS/FUNCOES ------;
 MostraDisplay:; escreve os menus no periférico de saída
@@ -239,5 +239,29 @@ pop r6
 pop r5
 pop r3
 pop r2
+pop r0
+ret
+
+CalcTotalPaginas:
+push r0                     
+push r1
+push r2
+push r4                     
+mov r0, TotalRegistos       ; r0 = numero total de registos
+mov r1, 5                   ; r1 = 5
+mov r2, TotalPagStock       ; r2 = endereço onde fica guardado o total de páginas
+jmp inicioCalc                 
+cicloCalc:
+add r0, 1; 
+inicioCalc:
+mov r4, r0
+mod r4, r1
+cmp r4, 0                   ; r4 % 5 = 0?
+jnz cicloCalc
+div r0, r1
+mov [r2], r0                ; M[r2] = numero total de páginas para o stock    
+pop r4
+pop r2
+pop r1
 pop r0
 ret
