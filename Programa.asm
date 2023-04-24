@@ -4,10 +4,10 @@ DisplayFim equ 416fh
 Opcao equ 4180h
 PasswordInput equ 4186h
 TamanhoNomeRegisto equ 11
-TamanhoRegisto equ 14
+TamanhoRegisto equ 16
 CaracterVazio equ 20h
 ItemsPorPag equ 5
-TotalRegistos equ 15
+TotalRegistos equ 16
 Conversoes equ 4200h ; endereço onde vai ficar os numeros a serem convertidos para ASCII
 
 ;------ PASSWORD ------;
@@ -26,73 +26,79 @@ place 2000h
 Bebidas:
 string 0
 string "Brisa      "
-string 53
-string 100
+word 53
+word 100
 
 string 1
 string "Sumol      "
-string 34
-string 200
+word 34
+word 200
 
 string 2
 string "Compal     "
-string 15
-string 90
+word 15
+word 90
 
 string 3
 string "Pepsi      "
-string 12
-string 120
+word 12
+word 120
 
 string 4
 string "Coca-Cola  "
-string 41
-string 120
+word 41
+word 120
 
 Snacks:
 string 10
 string "Kitkat     "
-string 25
-string 70
+word 25
+word 70
 
 string 11
 string "Kinder     "
-string 17
-string 90
+word 17
+word 90
 
 string 12
 string "M&Ms       "
-string 18
-string 80
+word 18
+word 80
 
 string 13
 string "Pringles   "
-string 66
-string 130
+word 66
+word 130
 
 string 14
 string "Snickers   "
-string 6
-string 120
+word 6
+word 120
 
 Dinheiro:
-string "5euros     "
-string 50
+string " 5euros     "
+word 50
+word 0
 
-string "2euros     "
-string 41
+string " 2euros     "
+word 41
+word 0
 
-string "1euro      "
-string 31
+string " 1euro      "
+word 31
+word 0
 
-string "50cent     "
-string 68
+string " 50cent     "
+word 68
+word 0
 
-string "20cent     "
-string 27
+string " 20cent     "
+word 27
+word 0
 
-string "10cent     "
-string 12
+string " 10cent     "
+word 12
+word 0
 
 ;------ MENUS ------;
 place 3000h
@@ -245,14 +251,9 @@ mostraStock:
 mostraPagina:
 	call RenderizaPagStock		; r7 passa a apontar para o próximo registo
 	call LimpaPerifericos
-	add r5, 1					; pag_atual = pag_atual + 1
-	cmp r5, r0					; pag_atual <= total_pag?
-	jle mostraPagina
 segundaLeitura:
-	mov r1, Opcao
+	; r1 = endereço da opção
 	mov r2, [r1]				; r2 = opcao
-	cmp r2, 0					; opcao = 0?
-	jeq segundaLeitura			
 	cmp r2, 1					; opcao = 1?
 	jne segundaLeitura
 	add r5, 1					; pag_atual = pag_atual + 1
@@ -274,7 +275,6 @@ RenderizaPagStock:
 	push r3; = numero a converter para ASCII (usado na chamada a NumParaASCII)
 	push r4; = numero de caracteres pretendidos na conversao (usado na chamada a NumParaASCII)
 	push r6; = percorre os registos de items
-	push r7; = posição do registo (usado na chamada a EscreveItemStock)
 	push r8; = constante (TamanhoRegisto)
 	mov r1, DisplayInicio   ; pos_display = inicio do display
 primeiraLinha:
@@ -298,7 +298,6 @@ primeiraLinha:
 	mov r2, CaracterVazio	; caracter = " "
 	movb [r1], r2			; display apresenta "Stock <pag_atual>/<total_pag> "
 	add r1, 1				; r1 passa a apontar para próxima linha do display
-	mov r7, Bebidas			; (DPS VAI SER TIRADO!!!!!!) r7 aponta para a base da tabela de registos 
 	mov r8, TamanhoRegisto	; r8 = Tamanho dos 
 	mov r6, 5				; r6 = 5
 	mul r6, r8				; r6 = 5 * TamanhoRegisto	
@@ -332,7 +331,6 @@ ultimaLinha:
 	add r1, 2               ; r1 = r1 + 2
 	mov [r1], r2            ; Display = "1) Seguinte     "
 	pop r8
-	pop r7
 	pop r6
 	pop r4
 	pop r3
@@ -361,7 +359,7 @@ escreveNome:
 	cmp r2, r0			; i < posição da quantidade?
 	jlt escreveNome
 escreveQtd:
-	movb r3, [r0]		; r3 fica com o valor da quantidade do items
+	mov r3, [r0]		; r3 fica com o valor da quantidade do items
 	mov r4, 5			; r4 fica com o número de dígitos pretendidos para a conversão em ASCII
 	call NumParaASCII	; r1 aponta para a próxima linha do display
 	pop r5
