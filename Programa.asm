@@ -149,8 +149,27 @@ string "2) Voltar       "
 
 ;------ PROGRAMA ------;
 place 0000h
-main:
+programa:
+inicio:
+	mov r0, MenuInicio			; r0 aponta para o menu inical guardado na memória
+	call MostraDisplay			; imprime o menu inicial no display
+	call LimpaPerifericos	
+leOpcao:	
+	mov r1, Opcao				; r1 aponta para o endereço do periférico para introduzir a opcao
+	mov r2, [r1]				; r2 = opcao
+	cmp r2, 0					
+	jeq leOpcao					; salta para a leitura se o utilizador ainda não itroduziu nada (ocpao = 0)
+	cmp r2, 1	
+	jeq chamaRotinaProdutos		; salta para a rotina de venda de produtos se foi introduzido 1 (opcao = 1)
+	cmp r2, 2	
+	jeq chamaRotinaStock		; salta para a rotina de visualização do stock se foi introduzido 2 (ocpao = 2)
+	call RotinaOpcaoInvalida	; se não saltou, então a opcao é inválida 
+	jmp inicio					; volta ao inicio do programa
+chamaRotinaStock:			
     call RotinaStock
+	jmp inicio					; volta ao inicio do programa
+chamaRotinaProdutos:
+	jmp inicio					; volta ao inicio do programa
 
 ;------ ROTINAS/FUNCOES ------;
 MostraDisplay:          ; escreve os menus no periférico de saída
@@ -225,11 +244,11 @@ inicioRotinaStock:
 	mov r0, MenuStock			; r0 aponta para o menu do stock
 	call MostraDisplay			; mostra no display o menu do stock
 	call LimpaPerifericos		; limpa o periferico entrada da opcao
-primeiraLeitura: 	
+leOpcaoStock1: 	
 	mov r1, Opcao	
 	mov r2, [r1]				; r2 = opcao
 	cmp r2, 0					; opcao = 0?
-	jeq primeiraLeitura	
+	jeq leOpcaoStock1	
 	cmp r2, 4					; opcao = 4?
 	jeq voltar	
 	cmp r2, 1					; opcao = 1?
@@ -251,11 +270,11 @@ mostraStock:
 mostraPagina:
 	call RenderizaPagStock		; r7 passa a apontar para o próximo registo
 	call LimpaPerifericos
-segundaLeitura:
+leOpcaoStock2:
 	; r1 = endereço da opção
 	mov r2, [r1]				; r2 = opcao
 	cmp r2, 1					; opcao = 1?
-	jne segundaLeitura
+	jne leOpcaoStock2
 	add r5, 1					; pag_atual = pag_atual + 1
 	cmp r5, r0					; pag_atual > total_pag?
 	jle mostraPagina
