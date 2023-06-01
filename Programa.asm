@@ -194,6 +194,15 @@ string "                "
 string "1) Confirmar    "
 string "2) Voltar       "
 
+PagStock:
+string "Stock     /     "
+string "                "
+string "                "
+string "                "
+string "                "
+string "                "
+string "1) Seguinte     "
+
 ;==========================================================================================
 ; Pragrama principal - Máquina de vendas
 ;==========================================================================================
@@ -228,10 +237,9 @@ chamaRotinaProdutos:
 ; Input: r0 = endereço do menu a ser mostrado no display da máquina 
 ;==========================================================================================
 MostraDisplay:
-    ; r0 = endereço do menu a ser mostrado
-    push r1;= primeiro endereço do periférico de saida
-    push r2;= último endereço do periférico de saida
-    push r3;= caracter (em ASCII) no endereço r0
+    push r1; = primeiro endereço do periférico de saida
+    push r2; = último endereço do periférico de saida
+    push r3; = caracter (em ASCII) no endereço r0
     mov r1, DisplayInicio
     mov r2, DisplayFim
 ciclo:
@@ -394,71 +402,43 @@ voltar:
 ; Input: 
 ;	. r0 - total de páginas
 ;	. r5 - página atual
-; 	. r7 - aponta para o primeiro dos 4 items a ser observados na página do stock
+; 	. r7 - aponta para o primeiro dos 5 items a serem mostrados na página do stock
 ; Output:
-;	. r7 - aponta para o próximo item depois dos 4 que foram impressos no display
+;	. r7 - aponta para o próximo item depois dos 5 que foram impressos no display
 ;==========================================================================================
 RenderizaPagStock:
-	push r1; = posiçao do display (usado na chamada a EscreveItemStock)
-	push r2; = caracter
-	push r3; = numero a converter para ASCII (usado na chamada a NumParaASCII)
-	push r4; = numero de caracteres pretendidos na conversao (usado na chamada a NumParaASCII)
-	push r6; = percorre os registos de items
-	push r8; = constante (TamanhoRegisto)
-	mov r1, DisplayInicio   ; pos_display = inicio do display
-primeiraLinha:
-	mov r2, 5374h           ; caracter = "St"
-	mov [r1], r2            ; display = "St" 
-	add r1, 2               ; pos_display = pos_display + 2
-	mov r2, 6f63h           ; caracter = "oc"
-	mov [r1], r2            ; display = "Stoc"
-	add r1, 2               ; pos_display = pos_display + 2
-	mov r2, 6b20h           ; caracter = "k "
-	mov [r1], r2            ; display = "Stock "
-	add r1, 2               ; pos_display = pos_display + 2
-	mov r3, r5              ; num_a_converter = pag_atual
-	mov r4, 4               ; num_char = 4
-	call NumParaASCII       ; converte a página atual para ASCII e passa para a próxima posição do display
-	mov r2, 2fh				; caracter = "/"
-	movb [r1], r2			; display = "Stock <pag_atual>/"
-	add r1, 1				; pos_display = pos_display + 1
-	mov r3, r0				; num_a_converter = total 
-	call NumParaASCII		; converte o total de páginas para ASCII e passa para a próxima posição do display
-	mov r2, CaracterVazio	; caracter = " "
-	movb [r1], r2			; display apresenta "Stock <pag_atual>/<total_pag> "
-	add r1, 1				; r1 passa a apontar para próxima linha do display
-	mov r8, TamanhoRegisto	; r8 = Tamanho dos 
+	push r1
+	push r2
+	push r3
+	push r4
+	push r6
+	push r8
+; mostrar no display o template para a página do stock
+	mov r2, r0				; copia o conteúdo de r0 (total de páginas) para r2 (r0 vai ser usado para a chamar MostraDisplay)
+	mov r0, PagStock		; r0 aponta para o o template da página do stock
+	call MostraDisplay		; é mostrado no display o template para a página do stock 
+	mov r0, r2				; r0 volta a ter valor do total de páginas
+; imprimir o número da página atual a partir da sexta posição da primeira linha do display
+	mov r1, DisplayInicio	
+	add r1, 6				; r1 aponta para a posição onde deve ser impressa a página atual
+	mov r3, r5				; pretende-se converter o número da página atual
+	mov r4, 4				; pretende-se que sejam convertidos 4 digitos
+	call NumParaASCII		; o número da página atual é impresso no display (r1 aponta o caracter "/")
+; imprimir o total de páginas a partir do caracter "/" da primeira linha do display
+	add r1, 1				; r1 aponta para a posição onde deve ser impresso o total de páginas
+	mov r3, r0				; pretende-se converter o total de páginas
+	call NumParaASCII		; o total de páginas é impresso no display (r1 aponta para o fim da linha)
+; mostrar os items do stock a partir da segunda linha
+	add r1, 1				; r1 aponta para o início da próxima linha do display 
 	mov r6, 5				; r6 = 5
+	mov r8, TamanhoRegisto	; r8 = Tamanho dos registos
 	mul r6, r8				; r6 = 5 * TamanhoRegisto	
-	add r6, r7  			; r6 = 5 * TamanhoRegisto + BaseTabelaRegistos (aponta para o registo "limite" - não deve ser escrito no display)  
+	add r6, r7  			; r6 aponta para o registo "limite" - que não deve ser escrito no display (r6 = 5 * TamanhoRegisto + EndPrimeiroItem)
 proximaLinha:
 	call EscreveItemStock	; r1 aponta para a próxima linha do display
-	add r7, r8				; r7 = endereço do próximo item 
-	cmp r7, r6				; r7 < limite? (verifica se ultrapassámos os 5 registos a serem impressos)
-	jlt proximaLinha
-ultimaLinha:
-	mov r2, 3129h           ; caracter = "1)"
-	mov [r1], r2            ; Display = "1)"
-	add r1, 2               ; r1 = r1 + 2
-	mov r2, 2053h           ; caracter = " S"
-	mov [r1], r2            ; Display = "1) S"
-	add r1, 2               ; r1 = r1 + 2
-	mov r2, 6567h           ; caracter = "eg"
-	mov [r1], r2            ; Display = "1) Seg"
-	add r1, 2               ; r1 = r1 + 2
-	mov r2, 7569h           ; caracter = "ui"
-	mov [r1], r2            ; Display = "1) Segui"
-	add r1, 2               ; r1 = r1 + 2
-	mov r2, 6e74h           ; caracter = "nt"
-	mov [r1], r2            ; Display = "1) Seguint"
-	add r1, 2               ; r1 = r1 + 2
-	mov r2, 6520h           ; caracter = "e "
-	mov [r1], r2            ; Display = "1) Seguinte "
-	add r1, 2               ; r1 = r1 + 2
-	mov r2, 2020h           ; caracter = "  "
-	mov [r1], r2            ; Display = "1) Seguinte   "
-	add r1, 2               ; r1 = r1 + 2
-	mov [r1], r2            ; Display = "1) Seguinte     "
+	add r7, r8				; r7 aponta para o próximo item a ser escito
+	cmp r7, r6				; verifica se ultrapassámos os 5 items a serem impressos ...
+	jlt proximaLinha		; ... e escreve na linha seguinte se não for o caso
 	pop r8
 	pop r6
 	pop r4
@@ -474,7 +454,6 @@ ultimaLinha:
 ; 	. r7 - aponta para o item do stock a ser escrito no display
 ; Output:
 ;	. r1 - aponta para o início da próxima linha do display
-;	. r7 - aponta para o próximo item
 ;==========================================================================================
 EscreveItemStock:
 	push r0; = posição da quantidade no registo do item
