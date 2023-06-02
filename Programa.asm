@@ -141,12 +141,12 @@ string "7) Cancelar     "
 string "----------------"
 
 MenuPagamento:
-string "-- Pagamento ---"
-string "6)5euro 5)2euro "
-string "4)1euro 3)50cent"
-string "2)20cent        "
-string "1)10cent        "
-string "7)Acabar        "
+string "Pagamento ------"
+string "6) 5$   3) 0.50$"
+string "5) 2$   2) 0.20$"
+string "4) 1$   1) 0.10$"
+string "----------------"
+string "7) Acabar       "
 string "----------------"
 
 MenuIntroducaoID:
@@ -233,8 +233,12 @@ chamaRotinaProdutos:
 ;==========================================================================================
 ; Subrotinas
 ;==========================================================================================
+
+;==========================================================================================
 ; MostraDisplay - imprime no display o menu localizado no endereço especificado
-; Input: r0 = endereço do menu a ser mostrado no display da máquina 
+;==========================================================================================
+; Input: 
+;	r0 = endereço do menu a ser mostrado no display da máquina 
 ;==========================================================================================
 MostraDisplay:
     push r1; = primeiro endereço do periférico de saida
@@ -399,12 +403,13 @@ voltar:
 
 ;==========================================================================================
 ; RenderizaPagStock - mostra no display uma das páginas do stock
+;==========================================================================================
 ; Input: 
-;	. r0 - total de páginas
-;	. r5 - página atual
-; 	. r7 - aponta para o primeiro dos 5 items a serem mostrados na página do stock
+;	r0 - total de páginas
+;	r5 - página atual
+;	r7 - aponta para o primeiro dos 5 items a serem mostrados na página do stock
 ; Output:
-;	. r7 - aponta para o próximo item depois dos 5 que foram impressos no display
+;	r7 - aponta para o próximo item depois dos 5 que foram impressos no display
 ;==========================================================================================
 RenderizaPagStock:
 	push r1
@@ -449,11 +454,12 @@ proximaLinha:
 
 ;==========================================================================================
 ; EscreveItemStock - imprime no display o item do stock
+;==========================================================================================
 ; Input: 
-;	. r1 - posição atual do display
-; 	. r7 - aponta para o item do stock a ser escrito no display
+;	r1 - posição atual do display
+; 	r7 - aponta para o item do stock a ser escrito no display
 ; Output:
-;	. r1 - aponta para o início da próxima linha do display
+;	r1 - aponta para o início da próxima linha do display
 ;==========================================================================================
 EscreveItemStock:
 	push r0; = posição da quantidade no registo do item
@@ -486,12 +492,13 @@ escreveQtd:
 
 ;==========================================================================================
 ; NumParaASCII - escreve um número no display
+;==========================================================================================
 ; Input: 
-;	. r1 - posição atual do display
-; 	. r3 - número a converter para ASCII
-; 	. r4 - número de digitos pretendidos na conversão
+;	r1 - posição atual do display
+;	r3 - número a converter para ASCII
+;	r4 - número de digitos pretendidos na conversão
 ; Output:
-;	. r1 - próxima posição do display
+;	r1 - próxima posição do display
 ;==========================================================================================
 NumParaASCII:
 	push r0; = i (vai iterar no display)
@@ -519,10 +526,11 @@ proximoDigito:
 
 ;==========================================================================================
 ; CalcTotalPaginas - calcula o total de páginas necessárias para mostrar todo o stock
+;==========================================================================================
 ; Input: 
-;	. r0 - número de items no stock
+;	r0 - número de items no stock
 ; Output:
-;	. r0 - total de páginas para o stock
+;	r0 - total de páginas para o stock
 ;==========================================================================================
 CalcTotalPaginas:
 	push r1
@@ -545,8 +553,9 @@ CalcTotalPaginas:
 
 ;==========================================================================================
 ; VerificaPassword - verifica se a password introduzida é a password correta ou não
+;==========================================================================================
 ; Output: 
-;	. r5 - 1 se a password introduzida é a correta e 0 caso contrário
+;	r5 - 1 se a password introduzida é a correta e 0 caso contrário
 ;==========================================================================================
 VerificaPassword:
 	push r0
