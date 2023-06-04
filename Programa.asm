@@ -205,6 +205,15 @@ string "                "
 string "                "
 string "1) Seguinte     "
 
+PagProdutos:
+string "Items     /    "
+string "00) Brisa      "
+string "00.90$     0049"
+string "01) Fanta      "
+string "01.00$     0010"
+string "---------------"
+string "7) Proximo	   "
+
 ;==========================================================================================
 ; Pragrama principal - Máquina de vendas
 ;==========================================================================================
@@ -273,7 +282,10 @@ LimpaPerifericos:
     pop r0
     ret
 
-RotinaPassIncorreta:; chamada em casos de password inválida por exemplo
+;==========================================================================================
+; RotinaPassIncorreta - chamada em casos de password inválida
+;==========================================================================================
+RotinaPassIncorreta:
     push r0             ; r0 = endereço do menu de erros
     push r1             ; r1 = endereço do periférico de entrada
     push r2             ; r2 = valor da opção
@@ -290,7 +302,10 @@ leitura_:
     pop r0
     ret
 
-RotinaOpcaoInvalida:; chamada em casos de opção inválida por exemplo
+;==========================================================================================
+; RotinaOpcaoInvalida - chamada em casos de opção inválida
+;==========================================================================================
+RotinaOpcaoInvalida:
     push r0             ; r0 = endereço do menu de erros
     push r1             ; r1 = endereço do periférico de entrada
     push r2             ; r2 = valor da opção
@@ -498,7 +513,7 @@ escreveQtd:; escrever a quantidade do item
 ;==========================================================================================
 ; Input: 
 ;	r1 - posição atual do display
-;	r3 - número a converter para ASCII
+;	r3 - número a converter para ASCII (n)
 ;	r4 - número de digitos pretendidos na conversão
 ; Output:
 ;	r1 - próxima posição do display
@@ -507,21 +522,24 @@ NumParaASCII:
 	push r0; = i (vai iterar no display)
 	push r2; = guarda os dígitos do número a converter
 	push r5; = constantes (10 e 48)
+; inicialização de variáveis
 	mov r0, r1			; i = pos_display
 	add r0, r4			; i = pos_display + num_caracteres
 	sub r0, 1			; i = pos_display + num_caracteres - 1
-proximoDigito:	
+; algoritmo de conversão para ASCII
+	proximoDigito:
 	mov r2, r3			; copia n para r2
-	mov r5, 10			; r5 = 10
-	mod r2, r5			; r2 fica com o digito (r2 = r2 mod 10)
+	mov r5, 10
+	mod r2, r5			; r2 fica com valor do dígito (r2 = r2 mod 10)
 	div r3, r5			; n = n/10
-	mov r5, 48			; r5 = 48
-	add r2, r5			; r2 fica com o digito em código ASCII
-	movb [r0], r2		; escreve o digito no display
-	sub r0, 1			; passa para a próxima posição (posição anterior)
-	cmp r0, r1			; i >= pos_display?
-	jge proximoDigito
-	add r1, r4			; depois de a conversão acabar, passa para a próxima posição do display 
+	mov r5, 48
+	add r2, r5			; r2 fica com o dígito em código ASCII
+; escrita do dígito no display
+	movb [r0], r2		; escreve o dígito no display
+	sub r0, 1			; passa para a próxima posição do display (posição anterior)
+	cmp r0, r1
+	jge proximoDigito	; verifica se ainda não ultrapassámos a posição pretendida e, nesse caso, converte o próximo dígito
+	add r1, r4			; quando a conversão acabar, passa para a próxima posição do display 
 	pop r5
 	pop r2
 	pop r0
@@ -541,9 +559,9 @@ CalcTotalPaginas:
 	push r3
 	mov r1, 5                   ; r1 = 5
 	jmp inicioCalc                 
-cicloCalc:
+	cicloCalc:
 	add r0, 1                   ; n = n + 1
-inicioCalc:
+	inicioCalc:
 	mov r3, r0                  ; copia n para r3
 	mod r3, r1                  ; r3 = r3 % 5
 	cmp r3, 0                   ; r3 % 5 = 0?
@@ -566,20 +584,22 @@ VerificaPassword:
 	push r2
 	push r3
 	push r4
+; inicialização de variáveis
 	mov r0, Password        
 	mov r1, PasswordInput
-	mov r2, 0               ; r2 = i = incremento
-	mov r5, 0               ; r5 = registo de retorno (inicializado a 0)
-proximaLetra:
-	mov r3, [r0 + r2]		; r3 = 2 letras nas posições i e i + 1 da passe correta
-	mov r4, [r1 + r2]		; r4 = 2 letras nas posições i e i + 1 da passe introduzida
-	cmp r4, r3
-	jne diferentes          ; Password[i] != PasswordInput[i] ?
-	add r2, 2               ; i = i + 2
-	cmp r2, 4               
-	jne proximaLetra        ; i != 4 ?
-	add r5, 1               ; se o ciclo acabou e nao saltou para "diferentes", então são iguais (r5 = 1)
-diferentes:             	; salta para aqui se o ciclo encontrou letras diferentes (r5 = 0)
+	mov r2, 0    
+	mov r5, 0               ; r5 é o registo de retorno (inicializado a 0)
+; algoritmo de verificação
+	proximaLetra:
+	mov r3, [r0 + r2]		; r3 contêm as duas letras na posição r0 + i da password guardada
+	mov r4, [r1 + r2]		; r4 contêm as duas letras na posição r0 + i da password introduzida
+	cmp r4, r3				; compara r3 com r4
+	jne diferentes          ; se os valores forem distintos, acaba a rotina (retorna 0)
+	add r2, 2               ; se os valores forem iguais, passa para as próximas duas letras
+	cmp r2, 4
+	jne proximaLetra        ; verifica se já ultrapassámos as 4 letras (se sim, acaba)
+	add r5, 1               ; se o ciclo acabou e não saltou para "diferentes", então são iguais (retorna 1)
+	diferentes:             ; salta para aqui se o ciclo encontrou letras diferentes (retorna 0)
 	pop r4
 	pop r3
 	pop r2
