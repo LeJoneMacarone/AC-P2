@@ -1,18 +1,20 @@
 ;==========================================================================================
 ; Constantes
 ;==========================================================================================
+; periféricos de saída
 DisplayInicio equ 4100h		; localiza o início do display da máquina
 DisplayFim equ 416fh		; localiza o fim do display da máquina
+; periféricos de entrada
 Opcao equ 4180h				; localiza o botão de opção da máquina
 PasswordInput equ 4186h		; localiza onde será introduzida a password
+; constantes simbólicas
 TamanhoNomeRegisto equ 11	
 TamanhoRegisto equ 16
-CaracterVazio equ 20h
-ItemsPorPag equ 5
 TotalRegistos equ 16
 TotalBebidas equ 5
 TotalSnacks equ 5
 TotalProd equ 10
+; opções para o dinheiro introduzido
 Odezcent equ 1
 Ovintecent equ 2
 Ocinquentacent equ 3
@@ -142,11 +144,11 @@ string "----------------"
 
 MenuPagamento:
 string "Pagamento ------"
-string "6) 5$   3) 0.50$"
-string "5) 2$   2) 0.20$"
-string "4) 1$   1) 0.10$"
+string "06)05$  03)0.50$"
+string "05)02$  02)0.20$"
+string "04)01$  01)0.10$"
 string "----------------"
-string "7) Acabar       "
+string "00.00$ | 7)Pagar"
 string "----------------"
 
 MenuIntroducaoID:
@@ -442,8 +444,8 @@ RenderizaPagStock:
 proximaLinha:
 	call EscreveItemStock	; r1 aponta para a próxima linha do display
 	add r7, r8				; r7 aponta para o próximo item a ser escito
-	cmp r7, r6				; verifica se ultrapassámos os 5 items a serem impressos ...
-	jlt proximaLinha		; ... e escreve na linha seguinte se não for o caso
+	cmp r7, r6
+	jlt proximaLinha		; verifica se ultrapassámos os 5 items a serem impressos e escreve na linha seguinte se não for o caso
 	pop r8
 	pop r6
 	pop r4
@@ -467,19 +469,20 @@ EscreveItemStock:
 	push r3; = valor da quantidade do item do stock (a converter para ASCII)
 	push r4; = número de digitos pretendidos para a conversão
 	push r5; = caracter na posição apontada por r2
+; inicialização de variáveis
 	mov r0, TamanhoNomeRegisto
-	add r0, r7			; r0 aponta para a última letra do nome
+	add r0, r7
 	add r0, 1			; r0 aponta para a quantidade do item
-	mov r2, r7			; i = pos_registo
-	add r2, 1			; i = pos_registo + 1 = posição da 1ª letra
-escreveNome:
-	movb r5, [r2]		; obtêm o valor em memória na posição pos_letra + i 
-	movb [r1], r5		; acrescenta esse valor ao display
-	add r1, 1			; pos_display = pos_display + 1
-	add r2, 1			; i = i + 1
-	cmp r2, r0			; i < posição da quantidade?
-	jlt escreveNome
-escreveQtd:
+	mov r2, r7
+	add r2, 1			; r2 aponta para a 1ª letra do nomes
+escreveNome:; escrever o nome do item
+	movb r5, [r2]		; obtêm uma letra do nome (no posição r2)
+	movb [r1], r5		; imprime a letra no display (na posição r1)
+	add r1, 1			; incrementa a posição do display
+	add r2, 1			; segue para a próxima letra do nome
+	cmp r2, r0
+	jlt escreveNome		; verifica se ainda não chegámos à quantidade (fim do nome) e, nesse caso, imprime a próxima letra
+escreveQtd:; escrever a quantidade do item
 	mov r3, [r0]		; r3 fica com o valor da quantidade do items
 	mov r4, 5			; r4 fica com o número de dígitos pretendidos para a conversão em ASCII
 	call NumParaASCII	; r1 aponta para a próxima linha do display
@@ -538,9 +541,9 @@ CalcTotalPaginas:
 	push r3
 	mov r1, 5                   ; r1 = 5
 	jmp inicioCalc                 
-	cicloCalc:
+cicloCalc:
 	add r0, 1                   ; n = n + 1
-	inicioCalc:
+inicioCalc:
 	mov r3, r0                  ; copia n para r3
 	mod r3, r1                  ; r3 = r3 % 5
 	cmp r3, 0                   ; r3 % 5 = 0?
