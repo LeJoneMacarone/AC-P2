@@ -206,24 +206,24 @@ string "                "
 string "1) Seguinte     "
 
 PagProdutos:
-string "Items     /    "
-string "00) Brisa      "
-string "00.90$     0049"
-string "01) Fanta      "
-string "01.00$     0010"
-string "---------------"
-string "7) Proximo	   "
+string "Items     /     "
+string "00) Brisa       "
+string "00.90$     0049 "
+string "01) Fanta       "
+string "01.00$     0010 "
+string "----------------"
+string "7) Proximo	    "
 
 ;==========================================================================================
 ; Pragrama principal - Máquina de vendas
 ;==========================================================================================
 place 0000h
 programa:
-inicio:
+	inicio:
 	mov r0, MenuInicio			; r0 aponta para o menu inical guardado na memória
 	call MostraDisplay			; imprime o menu inicial no display
 	call LimpaPerifericos		
-leOpcao:	
+	leOpcao:	
 	mov r1, Opcao				; r1 aponta para o endereço do periférico para introduzir a opcao
 	mov r2, [r1]				; r2 = opcao
 	cmp r2, 0					
@@ -234,10 +234,10 @@ leOpcao:
 	jeq chamaRotinaStock		; salta para a rotina de visualização do stock se foi introduzido 2 (ocpao = 2)
 	call RotinaOpcaoInvalida	; se não saltou, então a opcao é inválida 
 	jmp inicio					; volta ao inicio do programa
-chamaRotinaStock:			
+	chamaRotinaStock:			
     call RotinaStock
 	jmp inicio					; volta ao inicio do programa
-chamaRotinaProdutos:
+	chamaRotinaProdutos:
 	call RotinaProdutos
 	jmp inicio					; volta ao inicio do programa
 
@@ -257,7 +257,7 @@ MostraDisplay:
     push r3; = caracter (em ASCII) no endereço r0
     mov r1, DisplayInicio
     mov r2, DisplayFim
-ciclo:
+	ciclo:
     mov r3, [r0]
     mov [r1], r3
     add r0, 2               ; r0 = r0 + 2
@@ -293,7 +293,7 @@ RotinaPassIncorreta:
     call MostraDisplay  ; mostra o menu de erros no display
     call LimpaPerifericos
     mov r1, Opcao
-leitura_:
+	leitura_:
     mov r2, [r1]
     cmp r2, 0           ; opcao = 0?
     jeq leitura
@@ -313,7 +313,7 @@ RotinaOpcaoInvalida:
     call MostraDisplay  ; mostra o menu de erros no display
     call LimpaPerifericos
     mov r1, Opcao
-leitura:
+	leitura:
     mov r2, [r1]
     cmp r2, 0           ; opcao = 0?
     jeq leitura
@@ -330,11 +330,11 @@ RotinaProdutos:
 	push r1
 	push r2
 	push r5
-inicioRotProd:
+	inicioRotProd:
 	mov r0, MenuCategoria		; r0 aponta para o menu da categoria
 	call MostraDisplay			; vai mostrar no display o menu da categoria
 	call LimpaPerifericos
-leOpcaoRotProd:
+	leOpcaoRotProd:
 	mov r1, Opcao				; r1 = endereço do periférico de entrada 
 	mov r2, [r1]				; r2 = valor da opção
 	cmp r2, 0					
@@ -345,17 +345,19 @@ leOpcaoRotProd:
 	jeq mostraSnacks			; r2 = 1? se sim, então vai para a parte dos snacks
 	call RotinaOpcaoInvalida	; se não saltou, então a opção não é válida
 	jmp inicioRotProd			; volta ao inicio
-mostraBebidas:
+	mostraBebidas:
 	mov r5, Bebidas				; r5 = endereço a partir do qual vai começar a procura do item cujo id vai ser introduzido pelo utilizador (neste caso, a partir das bebidas)
 	mov r9, 5					; r9 = quantos items existem na tabela de bebidas
-	call ProcurarOpcao			; permite a introdução do valor pelo utilizador e a sua procura a partir do endereço r5
-	jmp fimRotProd				; acaba
-mostraSnacks:
+	jmp mostraProdutos
+	mostraSnacks:
 	mov r5, Snacks				; r5 = endereço a partir do qual vai começar a procura do item cujo id vai ser introduzido pelo utilizador (neste caso, a partir das bebidas)
 	mov r9, 5					; r9 = quantos items existem na tabela de bebidas
+	mostraProdutos:
+	;===========================;
+	;call RenderizaPagProdutos
+	;===========================;
 	call ProcurarOpcao			; permite a introdução do valor pelo utilizador e a sua procura a partir do endereço r5
-	jmp fimRotProd				; acaba
-fimRotProd:
+	fimRotProd:
 	pop r5
 	pop r2
 	pop r1
@@ -372,11 +374,11 @@ RotinaStock:
     push r2
     push r5
 	push r7
-inicioRotinaStock:
+	inicioRotinaStock:
 	mov r0, MenuStock			; r0 aponta para o menu do stock
 	call MostraDisplay			; mostra no display o menu do stock
 	call LimpaPerifericos		; limpa o periferico entrada da opcao
-leOpcaoStock1: 	
+	leOpcaoStock1: 	
 	mov r1, Opcao	
 	mov r2, [r1]				; r2 = opcao
 	cmp r2, 0					; opcao = 0? se sim, volta a ler a opcao
@@ -385,24 +387,24 @@ leOpcaoStock1:
 	jeq voltar	
 	cmp r2, 1					; opcao = 1? se sim, verifica a password
 	jeq autenticacao
-opcaoInvalida:					; se nao saltou em nenhuma das anteriores, entao a opcao é inválida
+	opcaoInvalida:					; se nao saltou em nenhuma das anteriores, entao a opcao é inválida
 	call RotinaOpcaoInvalida	
 	jmp inicioRotinaStock		; volta ao inicio
-autenticacao:
+	autenticacao:
 	call VerificaPassword		; r5 = 1 se a password é correta e 0 caso contrário
 	cmp r5, 1 					
 	jeq mostraStock				; r5 = 1? (ou seja, a password é a correta?) se sim, mostra o stock
 	call RotinaPassIncorreta	; se não, chama a rotina de erro correspondente... 
 	jmp inicioRotinaStock		; ... e volta ao inicio
-mostraStock: 
+	mostraStock: 
 	mov r0, TotalRegistos		; r0 = numero total de registos
 	call CalcTotalPaginas		; r0 = total de páginas
 	mov r5, 1					; r5 = página atual
 	mov r7, Bebidas				; r7 aponta para a base da tabela de registos
-mostraPagina:
+	mostraPagina:
 	call RenderizaPagStock		; imprime no display o stock para a pagina atual para os 5 primeiros items a contar de r7 (r7 passa a apontar para o próximo registo)
 	call LimpaPerifericos
-leOpcaoStock2:
+	leOpcaoStock2:
 	; r1 = endereço da opção
 	mov r2, [r1]				; r2 = opcao
 	cmp r2, 1					
@@ -410,7 +412,7 @@ leOpcaoStock2:
 	add r5, 1					; se nao, vai para 
 	cmp r5, r0					; pag_atual > total_pag?
 	jle mostraPagina
-voltar:
+	voltar:
 	pop r7
     pop r5
     pop r2
@@ -456,7 +458,7 @@ RenderizaPagStock:
 	mov r8, TamanhoRegisto	; r8 = Tamanho dos registos
 	mul r6, r8				; r6 = 5 * TamanhoRegisto	
 	add r6, r7  			; r6 aponta para o registo "limite" - que não deve ser escrito no display (r6 = 5 * TamanhoRegisto + EndPrimeiroItem)
-proximaLinha:
+	proximaLinha:
 	call EscreveItemStock	; r1 aponta para a próxima linha do display
 	add r7, r8				; r7 aponta para o próximo item a ser escito
 	cmp r7, r6
@@ -486,19 +488,13 @@ EscreveItemStock:
 	push r5; = caracter na posição apontada por r2
 ; inicialização de variáveis
 	mov r0, TamanhoNomeRegisto
-	add r0, r7
-	add r0, 1			; r0 aponta para a quantidade do item
 	mov r2, r7
-	add r2, 1			; r2 aponta para a 1ª letra do nomes
-escreveNome:; escrever o nome do item
-	movb r5, [r2]		; obtêm uma letra do nome (no posição r2)
-	movb [r1], r5		; imprime a letra no display (na posição r1)
-	add r1, 1			; incrementa a posição do display
-	add r2, 1			; segue para a próxima letra do nome
-	cmp r2, r0
-	jlt escreveNome		; verifica se ainda não chegámos à quantidade (fim do nome) e, nesse caso, imprime a próxima letra
-escreveQtd:; escrever a quantidade do item
-	mov r3, [r0]		; r3 fica com o valor da quantidade do items
+	add r2, 1			; r2 aponta para a 1ª letra do nome
+; escrever o nome do item
+	call EscreveString	; r1 passa para a próxima posição do display e r2 aponta para quantidade do item
+; escrever a quantidade do item
+	escreveQtd:
+	mov r3, [r2]		; r3 fica com o valor da quantidade do items
 	mov r4, 5			; r4 fica com o número de dígitos pretendidos para a conversão em ASCII
 	call NumParaASCII	; r1 aponta para a próxima linha do display
 	pop r5
@@ -509,7 +505,7 @@ escreveQtd:; escrever a quantidade do item
 	ret
 
 ;==========================================================================================
-; NumParaASCII - escreve um número no display
+; NumParaASCII - escreve um número (em formato decimal) no display
 ;==========================================================================================
 ; Input: 
 ;	r1 - posição atual do display
@@ -606,6 +602,71 @@ VerificaPassword:
 	pop r1
 	pop r0
 	ret 
+
+;==========================================================================================
+; DinheiroParaASCII - imprime valores monetários no display
+;==========================================================================================
+; Input: 
+; Output:
+;==========================================================================================
+DinheiroParaASCII:
+	ret
+
+;==========================================================================================
+; HexParaASCII - imprime valores monetários no display
+;==========================================================================================
+; Input: 
+; Output:
+;==========================================================================================
+HexParaASCII:
+	ret
+
+;==========================================================================================
+; EscreveString - imprime no display o conteúdo (em ASCII) em memória a partir do apontador
+; especificado
+;==========================================================================================
+; Input: 
+; 	r0 - tamanho da string
+;	r1 - posição do display onde se pretende imprimir a string
+;	r2 - endereço do string que se pretende imprimir
+; Output:
+;	r1 - aponta para a próxima posição do display depois de concluir a escrita da string
+;	r2 - aponta para a próxima posição de memória
+;==========================================================================================
+EscreveString:
+	push r5
+	push r3
+; inicialização de variáveis
+	mov r3, r0			
+	add r3, r2			; r3 corresponde ao endereço limite (não pode ser escrito)
+; ciclo de escrito
+	proximoCaracter:
+	movb r5, [r2]		; obtêm uma letra do nome (no posição r2)
+	movb [r1], r5		; imprime a letra no display (na posição r1)
+	add r1, 1			; incrementa a posição do display
+	add r2, 1			; segue para a próxima letra do nome
+	cmp r2, r3
+	jlt proximoCaracter
+	pop r3
+	pop r5
+	ret
+
+;==========================================================================================
+; RenderizaPagProdutos - mostra, em diferentes páginas, todos os produtos de um determinada
+; categoria
+;==========================================================================================
+; Input:
+;	r0 - total de páginas
+;	r_?_ - página atual 
+;	r5 - apontador para o primeiro dos dois item a ser listado
+; Output:
+;	r5 - aponta para o próximo item a ser listado
+;==========================================================================================
+RenderizaPagProdutos:
+	ret
+
+
+
 
 
 ;==========================================================================================
