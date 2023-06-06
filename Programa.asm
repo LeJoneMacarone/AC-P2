@@ -207,12 +207,12 @@ string "1) Seguinte     "
 
 PagProdutos:
 string "Items     /     "
-string "00) Brisa       "
-string "00.90$     0049 "
-string "01) Fanta       "
-string "01.00$     0010 "
+string "                "
+string "                "
+string "                "
+string "                "
 string "----------------"
-string "7) Proximo	    "
+string "    Proximo     "
 
 ;==========================================================================================
 ; Pragrama principal - Máquina de vendas
@@ -329,36 +329,54 @@ RotinaProdutos:
 	push r0
 	push r1
 	push r2
+	push r3
 	push r5
 	inicioRotProd:
 	mov r0, MenuCategoria		; r0 aponta para o menu da categoria
 	call MostraDisplay			; vai mostrar no display o menu da categoria
 	call LimpaPerifericos
-	leOpcaoRotProd:
+; ciclo de leitura
+	leOpcaoProd1:
 	mov r1, Opcao				; r1 = endereço do periférico de entrada 
 	mov r2, [r1]				; r2 = valor da opção
 	cmp r2, 0					
-	jeq leOpcaoRotProd			; r2 = 0? se sim, então volta a ler a opção
+	jeq leOpcaoProd1			; r2 = 0? se sim, então volta a ler a opção
 	cmp r2, 1
 	jeq mostraBebidas			; r2 = 1? se sim, então vai para a parte das bebidas
 	cmp r2, 2
 	jeq mostraSnacks			; r2 = 1? se sim, então vai para a parte dos snacks
 	call RotinaOpcaoInvalida	; se não saltou, então a opção não é válida
-	jmp inicioRotProd			; volta ao inicio
+	jmp leOpcaoProd1			; volta ao inicio
 	mostraBebidas:
+	;...........;
+	mov r0, 6 	; total de páginas (TEMP)
+	;...........;
+	mov r3, 1					; r3 corresponde ao número da página para a lista de produtos
 	mov r5, Bebidas				; r5 = endereço a partir do qual vai começar a procura do item cujo id vai ser introduzido pelo utilizador (neste caso, a partir das bebidas)
 	mov r9, 5					; r9 = quantos items existem na tabela de bebidas
 	jmp mostraProdutos
 	mostraSnacks:
+	;...........;
+	mov r0, 6 	; total de páginas (TEMP)
+	;...........;
+	mov r3, 1					; r3 corresponde ao número da página para a lista de produtos
 	mov r5, Snacks				; r5 = endereço a partir do qual vai começar a procura do item cujo id vai ser introduzido pelo utilizador (neste caso, a partir das bebidas)
 	mov r9, 5					; r9 = quantos items existem na tabela de bebidas
 	mostraProdutos:
-	;===========================;
-	;call RenderizaPagProdutos
-	;===========================;
+	call LimpaPerifericos
+	call RenderizaPagProdutos
+	leOpcaoProd2:
+	mov r1, Opcao
+	mov r2, [r1]
+	cmp r2, 0					
+	jeq leOpcaoProd2
+	add r3, 1
+	cmp r3, r0
+	jle mostraProdutos
 	call ProcurarOpcao			; permite a introdução do valor pelo utilizador e a sua procura a partir do endereço r5
 	fimRotProd:
 	pop r5
+	pop r3
 	pop r2
 	pop r1
 	pop r0
@@ -604,21 +622,45 @@ VerificaPassword:
 	ret 
 
 ;==========================================================================================
-; DinheiroParaASCII - imprime valores monetários no display
+; DinheiroParaASCII - imprime valores monetários, em posições de memória, no display
 ;==========================================================================================
 ; Input: 
+;	r1 - posição atual do display
+;	r3 - valor a converter
 ; Output:
+;	r1 - próxima posição do display
 ;==========================================================================================
 DinheiroParaASCII:
-	ret
-
-;==========================================================================================
-; HexParaASCII - imprime valores monetários no display
-;==========================================================================================
-; Input: 
-; Output:
-;==========================================================================================
-HexParaASCII:
+	push r0 
+	push r2
+	push r4
+; converter normalmente 
+	add r1, 1
+	mov r4, 4			; pretende-se converter 4 dígitos
+	call NumParaASCII	; é escrito no display o número em r3 no formato "xxxx" (r1 aponta para a próxima posição do display)
+; colocar o cifrão no display depois do número 
+	mov r4, 36			; r4 possui o valor (em ASCII) do caracter "$"
+	movb [r1], r4		; o caracter "$" é escrito no display depois do número convertido ("xxxx$")
+; deslocar os dígitos "mais significativos" uma posição para a esquerda para ser colocado o ponto a meio
+	mov r2, r1			
+	sub r2, 2			; r2 aponta para o "limite" (a partir de r2, não devem ser deslocados dígitos)
+	sub r1, 4			; r1 aponta para o primeiro caracter 
+	mov r0, r1
+	sub r0, 1			; r0 aponta para a posição anterior a r1
+	deslocaProxDigito:
+	movb r4, [r1]
+	movb [r0], r4		; o caracter em r1 é deslocado para a esquerda 
+	add r1, 1			
+	add r0,	1 			; incrementa r1 e r0 (passam para as posições seguintes)
+	cmp r1, r2
+	jlt deslocaProxDigito
+; colocar o ponto 
+	mov r4, 46			; r4 possui o valor (em ASCII) do caracter "."
+	movb [r0], r4		; formato final na forma "xx.xx$"
+	add r1, 3			; r1 passa a apontar para a próxima posição do display
+	pop r4
+	pop r2
+	pop r0
 	ret
 
 ;==========================================================================================
@@ -657,15 +699,89 @@ EscreveString:
 ;==========================================================================================
 ; Input:
 ;	r0 - total de páginas
-;	r_?_ - página atual 
-;	r5 - apontador para o primeiro dos dois item a ser listado
+;	r3 - página atual 
+;	r5 - apontador para o primeiro dos dois item a ser listados
+;	r9 - total de produtos a ser impressos
 ; Output:
 ;	r5 - aponta para o próximo item a ser listado
 ;==========================================================================================
 RenderizaPagProdutos:
+	push r1
+	push r2
+	push r4
+	push r6
+; mostrar no display o template para a página com os produtos
+	mov r2, r0				; copia o conteúdo de r0 (total de páginas) para r2 (r0 vai ser usado para chamar MostraDisplay)
+	mov r0, PagProdutos		; r0 aponta para o o template da página dos produtos
+	call MostraDisplay		; é mostrado no display o template para a página dos produtos
+	mov r0, r2				; r0 volta a ter valor do total de páginas
+; imprimir o número da página atual a partir da sexta posição da primeira linha do display
+	mov r2, r3				; o valor da página atual é copiado (temporariamente) para r2 (r3 é destruído por NumParaASCII)
+	mov r1, DisplayInicio	
+	add r1, 6				; r1 aponta para a posição onde deve ser impressa a página atual
+	mov r4, 4				; pretende-se que sejam convertidos 4 digitos
+	call NumParaASCII		; o número da página atual é impresso no display (r1 aponta o caracter "/")
+; imprimir o total de páginas a partir do caracter "/" da primeira linha do display
+	add r1, 1				; r1 aponta para a posição onde deve ser impresso o total de páginas
+	mov r3, r0				; pretende-se converter o total de páginas
+	call NumParaASCII		; o total de páginas é impresso no display (r1 aponta para o fim da linha)
+	mov r3, r2				; r3 volta a possuir o valor da página atual
+; mostrar os produtos a partir da segunda linha
+	mov r6, TamanhoRegisto
+	add r1, 1				; r1 aponta para o início da próxima linha do display 
+	call EscreveProduto		; r1 aponta para 2 linhas à frente 
+	add r5, r6				; r5 aponta para o próximo item
+	call EscreveProduto		; r1 aponta para 2 linhas à frente 
+	add r5, r6				; r5 aponta para o próximo item
+; (...)
+	pop r6
+	pop r4
+	pop r2
+	pop r1
 	ret
 
-
+;==========================================================================================
+; EscreveProduto - imprime as informações de um produto da máquina no display (ID, nome, 
+; quantidade e preço)
+;==========================================================================================
+; Input: 
+;	r1 - posição atual do display
+; 	r5 - aponta para o produto a ser escrito no display
+; Output:
+;	r1 - aponta para o início da próxima linha do display
+;==========================================================================================
+EscreveProduto:
+	push r0
+	push r2
+	push r3
+	push r4
+	mov r2, r5				; copiado o conteúdo de r5 (endereço da primeira letra do nome do produto) para r2 (para chamar a rotina EscreveString)
+; escrever o ID do produto
+	mov r4, 3				; pretende-se que sejam convertidos 3 dígitos
+	movb r3, [r2]			; pretende-se que seja convertido o ID (ou seja, o número de opção) do produto
+	call NumParaASCII		; o ID do produto é impresso no display (r1 aponta para a quarta posição da linha)
+	mov r4, 41				; r4 possui o valor (ASCII) do caracter ")"
+	movb [r1], r4			; ")" é impresso no display depois do ID do produto
+; escrever o nome do produto	
+	mov r0, TamanhoNomeRegisto
+	add r1, 1				; r1 aponta para a próxima posição do display
+	add r2, 1				; r2 aponta para a primeira letra do nome do produto
+	call EscreveString		; o nome do produto é escrito no display (r1 passa para a próxima posição do display e r2 aponta para a quantidade do produto)
+; escrever a quantidade do produto
+	add r1, 1				; r1 passa a apontar para o início da próxima linha do display
+	mov r4, 4				; pretende-se converter 4 dígitos
+	mov r3, [r2]			; pretende-se converter a quantidade em stock do produto
+	call NumParaASCII		; o quantidade do produto é escrito no display (r1 aponta para a quinta posição da linha)
+; escrever o preço do produto
+	add r1, 6				; r1 aponta para a posição onde se pretende imprimir o preço do produto
+	add r2, 2				; r2 aponta para o preço do produto
+	mov r3, [r2]			; pretende-se converter o preço do produto
+	call DinheiroParaASCII	; r1 aponta para o início da próxima linha do display
+	pop r4
+	pop r3
+	pop r2
+	pop r0
+	ret
 
 
 
