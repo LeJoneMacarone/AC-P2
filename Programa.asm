@@ -344,29 +344,32 @@ RotinaProdutos:
 	cmp r2, 1
 	jeq mostraBebidas			; r2 = 1? se sim, então vai para a parte das bebidas
 	cmp r2, 2
-	jeq mostraSnacks			; r2 = 1? se sim, então vai para a parte dos snacks
+	jeq mostraSnacks			; r2 = 2? se sim, então vai para a parte dos snacks
+	cmp r2, 7					
+	jeq fimRotProd				; r2 = 7?
 	call RotinaOpcaoInvalida	; se não saltou, então a opção não é válida
 	jmp leOpcaoProd1			; volta ao inicio
 	mostraBebidas:
-	;...........;
-	mov r0, 6 	; total de páginas (TEMP)
-	;...........;
+	mov r0, TotalBebidas
+	mov r1, 2 
+	call CalcTotalPaginas
+	mov r1, Opcao
 	mov r3, 1					; r3 corresponde ao número da página para a lista de produtos
 	mov r5, Bebidas				; r5 = endereço a partir do qual vai começar a procura do item cujo id vai ser introduzido pelo utilizador (neste caso, a partir das bebidas)
 	mov r9, 5					; r9 = quantos items existem na tabela de bebidas
 	jmp mostraProdutos
 	mostraSnacks:
-	;...........;
-	mov r0, 6 	; total de páginas (TEMP)
-	;...........;
+	mov r0, TotalSnacks
+	mov r1, 2 
+	call CalcTotalPaginas
+	mov r1, Opcao
 	mov r3, 1					; r3 corresponde ao número da página para a lista de produtos
 	mov r5, Snacks				; r5 = endereço a partir do qual vai começar a procura do item cujo id vai ser introduzido pelo utilizador (neste caso, a partir das bebidas)
 	mov r9, 5					; r9 = quantos items existem na tabela de bebidas
 	mostraProdutos:
-	call LimpaPerifericos
 	call RenderizaPagProdutos
+	call LimpaPerifericos
 	leOpcaoProd2:
-	mov r1, Opcao
 	mov r2, [r1]
 	cmp r2, 0					
 	jeq leOpcaoProd2
@@ -405,7 +408,7 @@ RotinaStock:
 	jeq voltar	
 	cmp r2, 1					; opcao = 1? se sim, verifica a password
 	jeq autenticacao
-	opcaoInvalida:					; se nao saltou em nenhuma das anteriores, entao a opcao é inválida
+	opcaoInvalida:				; se nao saltou em nenhuma das anteriores, entao a opcao é inválida
 	call RotinaOpcaoInvalida	
 	jmp inicioRotinaStock		; volta ao inicio
 	autenticacao:
@@ -415,15 +418,16 @@ RotinaStock:
 	call RotinaPassIncorreta	; se não, chama a rotina de erro correspondente... 
 	jmp inicioRotinaStock		; ... e volta ao inicio
 	mostraStock: 
+	mov r1, 5
 	mov r0, TotalRegistos		; r0 = numero total de registos
 	call CalcTotalPaginas		; r0 = total de páginas
+	mov r1, Opcao
 	mov r5, 1					; r5 = página atual
 	mov r7, Bebidas				; r7 aponta para a base da tabela de registos
 	mostraPagina:
 	call RenderizaPagStock		; imprime no display o stock para a pagina atual para os 5 primeiros items a contar de r7 (r7 passa a apontar para o próximo registo)
 	call LimpaPerifericos
 	leOpcaoStock2:
-	; r1 = endereço da opção
 	mov r2, [r1]				; r2 = opcao
 	cmp r2, 1					
 	jne leOpcaoStock2			; opcao != 1? se sim, volta a ler a opcao
@@ -560,30 +564,27 @@ NumParaASCII:
 	ret
 
 ;==========================================================================================
-; CalcTotalPaginas - calcula o total de páginas necessárias para mostrar todo o stock
+; CalcTotalPaginas - calcula o total de páginas necessárias para mostrar todos os items
+; para uma determinada lista
 ;==========================================================================================
 ; Input: 
-;	r0 - número de items no stock
+;	r0 - número de items a serem mostrados
+; 	r1 - número de items por página
 ; Output:
 ;	r0 - total de páginas para o stock
 ;==========================================================================================
 CalcTotalPaginas:
-	push r1
 	push r2
 	push r3
-	mov r1, 5                   ; r1 = 5
-	jmp inicioCalc                 
-	cicloCalc:
-	add r0, 1                   ; n = n + 1
-	inicioCalc:
-	mov r3, r0                  ; copia n para r3
-	mod r3, r1                  ; r3 = r3 % 5
-	cmp r3, 0                   ; r3 % 5 = 0?
-	jnz cicloCalc
-	div r0, r1                  ; n = n/5  
+	mov r3, r0
+	div r0, r1		
+	mod r3, r1		
+	cmp r3, 0
+	jeq fimCalculo
+	add r0, 1
+	fimCalculo:
 	pop r3
 	pop r2
-	pop r1
 	ret
 
 ;==========================================================================================
@@ -733,7 +734,6 @@ RenderizaPagProdutos:
 	add r5, r6				; r5 aponta para o próximo item
 	call EscreveProduto		; r1 aponta para 2 linhas à frente 
 	add r5, r6				; r5 aponta para o próximo item
-; (...)
 	pop r6
 	pop r4
 	pop r2
