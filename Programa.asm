@@ -246,83 +246,6 @@ programa:
 ;==========================================================================================
 
 ;==========================================================================================
-; MostraDisplay - imprime no display o menu localizado no endereço especificado
-;==========================================================================================
-; Input: 
-;	r0 = endereço do menu a ser mostrado no display da máquina 
-;==========================================================================================
-MostraDisplay:
-    push r1
-    push r2
-    push r3
-    mov r1, DisplayInicio
-    mov r2, DisplayFim
-	proximoPixel:
-    mov r3, [r0]
-    mov [r1], r3
-    add r0, 2
-    add r1, 2
-    cmp r1, r2
-    jlt proximoPixel
-    pop r3
-    pop r2
-    pop r1
-    ret
-
-;==========================================================================================
-; LimpaPerifericos - apaga o valor inserido nos periféricos de entrada
-;==========================================================================================
-LimpaPerifericos:
-    push r0
-    push r1
-    mov r0, Opcao
-    mov r1, 0
-    mov [r0], r1
-    pop r1
-    pop r0
-    ret
-
-;==========================================================================================
-; RotinaPassIncorreta - chamada em casos de password inválida
-;==========================================================================================
-RotinaPassIncorreta:
-    push r0
-    push r1
-    push r2
-    mov r0, MenuPassIncorreta
-    call MostraDisplay
-    call LimpaPerifericos
-    mov r1, Opcao
-	leitura_:
-    mov r2, [r1]
-    cmp r2, 0
-    jeq leitura
-    pop r2
-    pop r1
-    pop r0
-    ret
-
-;==========================================================================================
-; RotinaOpcaoInvalida - chamada em casos de opção inválida
-;==========================================================================================
-RotinaOpcaoInvalida:
-    push r0
-    push r1
-    push r2
-    mov r0, MenuOpcaoInvalida
-    call MostraDisplay
-    call LimpaPerifericos
-    mov r1, Opcao
-	leitura:
-    mov r2, [r1]
-    cmp r2, 0
-    jeq leitura
-    pop r2
-    pop r1
-    pop r0
-    ret
-
-;==========================================================================================
 ; RotinaProdutos - permite que o utilizador escolha que tipo de produtos pretende comprar 
 ;==========================================================================================
 RotinaProdutos:
@@ -354,13 +277,14 @@ RotinaProdutos:
 	mostraBebidas:
 	mov r5, Bebidas				; r5 aponta para o item onde começará a procura (neste caso, a partir das bebidas)
 	; cálculo do número de bebidas na máquina (= (Snacks - Bebidas)/16)
-	mov r0, Snacks
-	sub r0, r5
-	mov r9, TamanhoRegisto
-	div r0, r9					; r0 possui o número de bebidas na máquina
-	mov r9, r0					; copia r0 para r9 (r9 vai ser usado pela rotina ProcuraOpção)
+	mov r9, Snacks
+	sub r9, r5
+	mov r0, TamanhoRegisto
+	div r9, r0					; r9 possui o número de bebidas na máquina
+	mov r0, r9					; copia o número de bebidas para r0 (vai ser usado para calcular o total de páginas)
+	mov r7, r9					; copia o número de bebidas para r7 (vai ser usado pela rotina RenderizaPagProdutos)
 	; cálculo de total de páginas necessárias para mostrar todos os items da lista de produtos
-	mov r1, 2 					; r1 corresponde ao número de items por página
+	mov r1, 2 					; r1 corresponde ao número de items por página 
 	call CalcTotalPaginas		; r0 possui o total de páginas
 	mov r1, Opcao				; r1 aponta para o periférico de entrada da opção
 	mov r3, 1					; r3 corresponde ao número da página para a lista de produtos
@@ -369,11 +293,12 @@ RotinaProdutos:
 	mostraSnacks:
 	mov r5, Snacks				; r5 aponta para o item onde começará a procura (neste caso, a partir dos Snacks)
 	; cálculo do número de bebidas na máquina (= (Dinheiro - Snacks)/16)
-	mov r0, Dinheiro			
-	sub r0, r5
-	mov r9, TamanhoRegisto
-	div r0, r9					; r0 possui o número de snacks na máquina
-	mov r9, r0					; copia r0 para r9 (r9 vai ser usado pela rotina ProcuraOpção)
+	mov r9, Dinheiro			
+	sub r9, r5
+	mov r0, TamanhoRegisto
+	div r9, r0					; r9 possui o número de snacks na máquina
+	mov r0, r9					; copia r9 para r0 (r0 vai ser usado para calcular o total de páginas)
+	mov r7, r9					; copia r9 para r7 (r7 vai ser usado pela rotina RenderizaPagProdutos)
 	; cálculo de total de páginas necessárias para mostrar todos os items da lista de produtos
 	mov r1, 2 					; r1 corresponde ao número de items por página
 	call CalcTotalPaginas		; r0 possui o total de páginas
@@ -387,11 +312,11 @@ RotinaProdutos:
 	leOpcaoProd2:
 	mov r2, [r1]				
 	cmp r2, 0					; r2 é o valor da opção
-	jeq leOpcaoProd2
-	add r3, 1
+	jeq leOpcaoProd2			; se nenhum valor foi introduzido (r2 = 0), volta a ler o periférico
+	add r3, 1					; incrementa o número da página atual
 	cmp r3, r0
-	jle mostraProdutos
-	; compra do produto (escolha do produto e introdução do dinheiro)
+	jle mostraProdutos			; enquanto o número da página for menor que o total de páginas, continua a listar os produtos 
+	; compra do produto (escolha do produto, pagamento e visualização do talão)
 	call ProcurarOpcao
 	fimRotProd:
 	pop r9
@@ -403,14 +328,13 @@ RotinaProdutos:
 	ret
 
 ;==========================================================================================
-; RenderizaPagProdutos - mostra, em diferentes páginas, todos os produtos de um determinada
-; categoria
+; RenderizaPagProdutos - mostra no display uma das páginas da lista de produtos
 ;==========================================================================================
 ; Input:
 ;	r0 - total de páginas
 ;	r3 - página atual 
 ;	r5 - apontador para o primeiro dos dois item a ser listados
-;	r9 - total de produtos a ser impressos
+;	r7 - número de produtos a ser impressos
 ; Output:
 ;	r5 - aponta para o próximo item a ser listado
 ;==========================================================================================
@@ -419,29 +343,34 @@ RenderizaPagProdutos:
 	push r2
 	push r4
 	push r6
-; mostrar no display o template para a página com os produtos
+	; mostrar no display o template para a página com os produtos
 	mov r2, r0				; copia o conteúdo de r0 (total de páginas) para r2 (r0 vai ser usado para chamar MostraDisplay)
 	mov r0, PagProdutos		; r0 aponta para o o template da página dos produtos
 	call MostraDisplay		; é mostrado no display o template para a página dos produtos
 	mov r0, r2				; r0 volta a ter valor do total de páginas
-; imprimir o número da página atual a partir da sexta posição da primeira linha do display
+	; imprimir o número da página atual a partir da sexta posição da primeira linha do display
 	mov r2, r3				; o valor da página atual é copiado (temporariamente) para r2 (r3 é destruído por NumParaASCII)
 	mov r1, DisplayInicio	
 	add r1, 6				; r1 aponta para a posição onde deve ser impressa a página atual
 	mov r4, 4				; pretende-se que sejam convertidos 4 digitos
 	call NumParaASCII		; o número da página atual é impresso no display (r1 aponta o caracter "/")
-; imprimir o total de páginas a partir do caracter "/" da primeira linha do display
+	; imprimir o total de páginas a partir do caracter "/" da primeira linha do display
 	add r1, 1				; r1 aponta para a posição onde deve ser impresso o total de páginas
 	mov r3, r0				; pretende-se converter o total de páginas
 	call NumParaASCII		; o total de páginas é impresso no display (r1 aponta para o fim da linha)
 	mov r3, r2				; r3 volta a possuir o valor da página atual
-; mostrar os produtos a partir da segunda linha
+	; mostrar os produtos a partir da segunda linha
 	mov r6, TamanhoRegisto
 	add r1, 1				; r1 aponta para o início da próxima linha do display 
 	call EscreveProduto		; r1 aponta para 2 linhas à frente 
 	add r5, r6				; r5 aponta para o próximo item
+	sub r7, 1				; decrementa o número de produtos a ser impressos
+	cmp r7, 0				
+	jle fimRotRendProd		; se não houver mais produtos, não escreve mais nada (salta para o fim da rotina)
 	call EscreveProduto		; r1 aponta para 2 linhas à frente 
 	add r5, r6				; r5 aponta para o próximo item
+	sub r7, 1				; decrementa o número de produtos a ser impressos
+	fimRotRendProd:		; se não houver mais produtos, não escreve mais nada
 	pop r6
 	pop r4
 	pop r2
@@ -464,27 +393,27 @@ EscreveProduto:
 	push r3
 	push r4
 	mov r2, r5				; copiado o conteúdo de r5 (endereço da primeira letra do nome do produto) para r2 (para chamar a rotina EscreveString)
-; escrever o ID do produto
+	; escrever o ID do produto
 	mov r4, 3				; pretende-se que sejam convertidos 3 dígitos
 	movb r3, [r2]			; pretende-se que seja convertido o ID (ou seja, o número de opção) do produto
 	call NumParaASCII		; o ID do produto é impresso no display (r1 aponta para a quarta posição da linha)
 	mov r4, 41				; r4 possui o valor (ASCII) do caracter ")"
 	movb [r1], r4			; ")" é impresso no display depois do ID do produto
-; escrever o nome do produto	
+	; escrever o nome do produto	
 	mov r0, TamanhoNomeRegisto
 	add r1, 1				; r1 aponta para a próxima posição do display
 	add r2, 1				; r2 aponta para a primeira letra do nome do produto
 	call EscreveString		; o nome do produto é escrito no display (r1 passa para a próxima posição do display e r2 aponta para a quantidade do produto)
-; escrever a quantidade do produto
+	; escrever a quantidade do produto
 	add r1, 1				; r1 passa a apontar para o início da próxima linha do display
 	mov r4, 4				; pretende-se converter 4 dígitos
 	mov r3, [r2]			; pretende-se converter a quantidade em stock do produto
-	call NumParaASCII		; o quantidade do produto é escrito no display (r1 aponta para a quinta posição da linha)
-; escrever o preço do produto
+	call NumParaASCII		; a quantidade do produto é escrita no display (r1 aponta para a quinta posição da linha)
+	; escrever o preço do produto
 	add r1, 6				; r1 aponta para a posição onde se pretende imprimir o preço do produto
 	add r2, 2				; r2 aponta para o preço do produto
 	mov r3, [r2]			; pretende-se converter o preço do produto
-	call DinheiroParaASCII	; r1 aponta para o início da próxima linha do display
+	call DinheiroParaASCII	; o preço do produto é escrito no display (r1 aponta para o início da próxima linha do display)
 	pop r4
 	pop r3
 	pop r2
@@ -631,6 +560,83 @@ EscreveItemStock:
 	pop r2
 	pop r0
 	ret
+
+;==========================================================================================
+; MostraDisplay - imprime no display o menu localizado no endereço especificado
+;==========================================================================================
+; Input: 
+;	r0 = endereço do menu a ser mostrado no display da máquina 
+;==========================================================================================
+MostraDisplay:
+    push r1
+    push r2
+    push r3
+    mov r1, DisplayInicio
+    mov r2, DisplayFim
+	proximoPixel:
+    mov r3, [r0]
+    mov [r1], r3
+    add r0, 2
+    add r1, 2
+    cmp r1, r2
+    jlt proximoPixel
+    pop r3
+    pop r2
+    pop r1
+    ret
+
+;==========================================================================================
+; LimpaPerifericos - apaga o valor inserido nos periféricos de entrada
+;==========================================================================================
+LimpaPerifericos:
+    push r0
+    push r1
+    mov r0, Opcao
+    mov r1, 0
+    mov [r0], r1
+    pop r1
+    pop r0
+    ret
+
+;==========================================================================================
+; RotinaPassIncorreta - chamada em casos de password inválida
+;==========================================================================================
+RotinaPassIncorreta:
+    push r0
+    push r1
+    push r2
+    mov r0, MenuPassIncorreta
+    call MostraDisplay
+    call LimpaPerifericos
+    mov r1, Opcao
+	leitura_:
+    mov r2, [r1]
+    cmp r2, 0
+    jeq leitura
+    pop r2
+    pop r1
+    pop r0
+    ret
+
+;==========================================================================================
+; RotinaOpcaoInvalida - chamada em casos de opção inválida
+;==========================================================================================
+RotinaOpcaoInvalida:
+    push r0
+    push r1
+    push r2
+    mov r0, MenuOpcaoInvalida
+    call MostraDisplay
+    call LimpaPerifericos
+    mov r1, Opcao
+	leitura:
+    mov r2, [r1]
+    cmp r2, 0
+    jeq leitura
+    pop r2
+    pop r1
+    pop r0
+    ret
 
 ;==========================================================================================
 ; NumParaASCII - escreve um número (em formato decimal) no display
